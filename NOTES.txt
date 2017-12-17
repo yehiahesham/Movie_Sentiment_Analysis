@@ -1,0 +1,4 @@
+
+to get max word count in dataset
+=LEN(TRIM(B3))-LEN(SUBSTITUTE(B3," ",""))+1
+then apply max on the list, we get max. is 37 

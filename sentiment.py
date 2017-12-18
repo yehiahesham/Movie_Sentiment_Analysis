@@ -1,6 +1,7 @@
 from keras.optimizers import SGD, Adam, Nadam, RMSprop
 from keras.models import Sequential,Model,load_model
 from keras.layers.core import Dense, Activation,Dropout ,Flatten
+from keras.layers import Embedding,Conv1D
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import sequence
@@ -66,18 +67,22 @@ Y_train = Y_train[num_test:]
 maxWordCount= 37
 maxDictionary_size=5000
 
-# create the tokenizer
+# create the tokenizer(s)
 train_Tokenizer = Tokenizer()
+Val_Tokenizer = Tokenizer()
 # fit the tokenizer on the documents
 train_Tokenizer.fit_on_texts(X_train)
+Val_Tokenizer.fit_on_texts(X_Val)
 train_Tokenizer_vocab_size = len(train_Tokenizer.word_index) + 1
+Val_Tokenizer_vocab_size = len(train_Tokenizer.word_index) + 1
 
 encoded_words = train_Tokenizer.texts_to_sequences(X_train)
+encoded_words2 = Val_Tokenizer.texts_to_sequences(X_Val)
 
 
 #padding all text to same size
-encodedPadded_words = sequence.pad_sequences(encoded_words, maxlen=maxWordCount)
-# X_Val = sequence.pad_sequences(X_Val, maxlen=maxWordCount)
+X_Train_encodedPadded_words = sequence.pad_sequences(encoded_words, maxlen=maxWordCount)
+X_Val_encodedPadded_words = sequence.pad_sequences(encoded_words2, maxlen=maxWordCount)
 # X_test = sequence.pad_sequences(X_test, maxlen=maxWordCount)
 
 print encodedPadded_words[0]
@@ -115,8 +120,8 @@ print 'X_test.shape is ', X_test.shape
 model = Sequential()
 
 model.add(Embedding(maxDictionary_size, 32, input_length=maxWordCount)) #to change words to ints
-model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='relu'))
-model.add(MaxPooling1D(pool_size=2))
+# model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='relu'))
+# model.add(MaxPooling1D(pool_size=2))
  #hidden layers
 # model.add(Dropout(0.5))
 model.add(Flatten())
@@ -171,8 +176,8 @@ print ("=============================== Training ===============================
 #                              epochs=epochs,validation_data=datagen_test,validation_steps =10000 / batchSize ,verbose=1,
 #                              callbacks=[board,checkpointer, reduce_lr] )
 
-history  = model.fit(X_train, Y_train, nb_epoch = epochs, batch_size=batch_size, verbose=1,
-                    validation_data=(X_Val, Y_Val), callbacks=[tensorboard, reduce_lr])
+history  = model.fit(X_Train_encodedPadded_words, Y_train, nb_epoch = epochs, batch_size=batch_size, verbose=1,
+                    validation_data=(X_Val_encodedPadded_words, Y_Val), callbacks=[tensorboard, reduce_lr])
 
 print ("=============================== Predicting =========================================")
 

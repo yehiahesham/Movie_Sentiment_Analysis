@@ -85,7 +85,17 @@ X_Train_encodedPadded_words = sequence.pad_sequences(encoded_words, maxlen=maxWo
 X_Val_encodedPadded_words = sequence.pad_sequences(encoded_words2, maxlen=maxWordCount)
 # X_test = sequence.pad_sequences(X_test, maxlen=maxWordCount)
 
-print encodedPadded_words[0]
+
+
+# One Hot Encoding
+Y_train = keras.utils.to_categorical(Y_train, 5)
+Y_Val   = keras.utils.to_categorical(Y_Val, 5)
+
+
+print Y_Val.shape
+print Y_Val
+print '-0-------'
+print X_Train_encodedPadded_words[0]
 print 'Featu  re are ',feature_names
 print '============================== After extracting a validation set of '+ str(num_test)+' ============================== '
 print '============================== Training data shapes =============================='
@@ -176,7 +186,7 @@ print ("=============================== Training ===============================
 #                              epochs=epochs,validation_data=datagen_test,validation_steps =10000 / batchSize ,verbose=1,
 #                              callbacks=[board,checkpointer, reduce_lr] )
 
-history  = model.fit(X_Train_encodedPadded_words, Y_train, nb_epoch = epochs, batch_size=batch_size, verbose=1,
+history  = model.fit(X_Train_encodedPadded_words, Y_train, epochs = epochs, batch_size=batch_size, verbose=1,
                     validation_data=(X_Val_encodedPadded_words, Y_Val), callbacks=[tensorboard, reduce_lr])
 
 print ("=============================== Predicting =========================================")

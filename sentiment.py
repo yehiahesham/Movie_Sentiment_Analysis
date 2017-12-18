@@ -1,7 +1,8 @@
 from keras.optimizers import SGD, Adam, Nadam, RMSprop
 from keras.models import Sequential,Model,load_model
-from keras.layers.core import Dense, Activation,Dropout ,Flatten
 from keras.layers import Embedding,Conv1D
+from keras.layers.core import Dense, Activation,Dropout ,Flatten
+from keras.layers.recurrent import LSTM
 from keras.utils import np_utils
 from keras.preprocessing.image import ImageDataGenerator
 from keras.preprocessing import sequence
@@ -34,15 +35,18 @@ def load_TestingData(path):     #loads data , caluclate Mean & subtract it data,
     X_test_PhraseID=np.array(list(D['PhraseId']))
     return  X_test,X_test_PhraseID
 
-def myfunction( x ):
-    return sum(x)
 
 X_train, Y_train, feature_names = load_TrainingData('./train.tsv')
 X_test,X_test_PhraseID = load_TestingData('./test.tsv')
-print X_test
 print '============================== Training data shapes =============================='
 print 'X_train.shape is ', X_train.shape
 print 'Y_train.shape is ',Y_train.shape
+
+
+Tokenizer = Tokenizer()
+Tokenizer.fit_on_texts(np.concatenate((X_train, X_test), axis=0))
+Tokenizer_vocab_size = len(Tokenizer.word_index) + 1
+print "Vocab size",Tokenizer_vocab_size
 
 #masking
 num_test = 10000
@@ -56,27 +60,15 @@ X_train = X_train[num_test:]
 Y_train = Y_train[num_test:]
 
 
-maxWordCount= 37
-maxDictionary_size=5000
+maxWordCount= 60
+maxDictionary_size=Tokenizer_vocab_size
 
-# create the tokenizer(s)
-train_Tokenizer = Tokenizer()
-Val_Tokenizer = Tokenizer()
-Test_Tokenizer = Tokenizer()
 
-# fit the tokenizer on the documents
 
-train_Tokenizer.fit_on_texts(X_train)
-Val_Tokenizer.fit_on_texts(X_Val)
-Test_Tokenizer.fit_on_texts(X_test)
 
-train_Tokenizer_vocab_size = len(train_Tokenizer.word_index) + 1
-Val_Tokenizer_vocab_size = len(train_Tokenizer.word_index) + 1
-Test_Tokenizer_vocab_size = len(train_Tokenizer.word_index) + 1
-
-encoded_words = train_Tokenizer.texts_to_sequences(X_train)
-encoded_words2 = Val_Tokenizer.texts_to_sequences(X_Val)
-encoded_words3 = Test_Tokenizer.texts_to_sequences(X_test)
+encoded_words = Tokenizer.texts_to_sequences(X_train)
+encoded_words2 = Tokenizer.texts_to_sequences(X_Val)
+encoded_words3 = Tokenizer.texts_to_sequences(X_test)
 
 
 #padding all text to same size
@@ -91,7 +83,7 @@ Y_train = keras.utils.to_categorical(Y_train, 5)
 Y_Val   = keras.utils.to_categorical(Y_Val, 5)
 
 
-print 'Featu  re are ',feature_names
+print 'Featu are ',feature_names
 print '============================== After extracting a validation set of '+ str(num_test)+' ============================== '
 print '============================== Training data shapes =============================='
 print 'X_train.shape is ', X_train.shape
@@ -120,6 +112,7 @@ print 'X_test.shape is ', X_test.shape
 model = Sequential()
 
 model.add(Embedding(maxDictionary_size, 32, input_length=maxWordCount)) #to change words to ints
+# model.add(LSTM(5))
 # model.add(Conv1D(filters=32, kernel_size=3, padding='same', activation='relu'))
 # model.add(MaxPooling1D(pool_size=2))
  #hidden layers
@@ -136,8 +129,14 @@ model.add(Dense(5, activation='softmax'))
 
 model.summary()
 
+
+
+
 # Loading best weights
-model.load_weights("./weights/weights_5.hdf5")
+model.load_weights("./weights/weights_8.hdf5")
+
+
+
 
 learning_rate=0.0001
 epochs = 100
@@ -146,8 +145,8 @@ sgd = SGD(lr=learning_rate, nesterov=True, momentum=0.7, decay=1e-4)
 model.compile(loss='binary_crossentropy', optimizer=sgd, metrics=['accuracy'])
 
 
-tensorboard = keras.callbacks.TensorBoard(log_dir='./logs/log_5', histogram_freq=0, write_graph=True, write_images=False)
-checkpointer = ModelCheckpoint(filepath="./weights/weights_5.hdf5", verbose=1, save_best_only=True, monitor="val_loss")
+tensorboard = keras.callbacks.TensorBoard(log_dir='./logs/log_8', histogram_freq=0, write_graph=True, write_images=False)
+checkpointer = ModelCheckpoint(filepath="./weights/weights_8.hdf5", verbose=1, save_best_only=True, monitor="val_loss")
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=0, verbose=1, mode='auto', cooldown=0, min_lr=1e-6)
 
 
@@ -157,7 +156,7 @@ print ("=============================== Training ===============================
 # # tensorboard --logdir=./logs
 
 # history  = model.fit(X_Train_encodedPadded_words, Y_train, epochs = epochs, batch_size=batch_size, verbose=1,
-                    # validation_data=(X_Val_encodedPadded_words, Y_Val), callbacks=[tensorboard, reduce_lr,checkpointer])
+#                     validation_data=(X_Val_encodedPadded_words, Y_Val), callbacks=[tensorboard, reduce_lr,checkpointer])
 
 print ("=============================== Score =========================================")
 
@@ -169,10 +168,17 @@ f = open('Submission.csv', 'w')
 f.write('PhraseId,Sentiment\n')
 
 
-predictions = model.predict(X_test_encodedPadded_words)
+
+
+# predictions = model.predict(X_test_encodedPadded_words)
+predicted_classes = model.predict_classes(X_test_encodedPadded_words, batch_size=batch_size, verbose=1)
+# print predicted_classes
+# preds = new_model.predict(x)
 
 for i in range(0,X_test_PhraseID.shape[0]):
-    pred =np.argmax(predictions[i])
-    f.write(str(X_test_PhraseID[i])+","+str(pred)+'\n')
+    # pred =np.argmax(predictions[i])
+    # f.write(str(X_test_PhraseID[i])+","+str(pred)+'\n')
+    f.write(str(X_test_PhraseID[i])+","+str(predicted_classes[i])+'\n')
+    # print predictions[i],"=>",pred
 
 f.close()

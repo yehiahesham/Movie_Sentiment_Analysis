@@ -1,4 +1,19 @@
 
 to get max word count in dataset
 =LEN(TRIM(B3))-LEN(SUBSTITUTE(B3," ",""))+1
-then apply max on the list, we get max. is 37 
+then apply max on the list, we get max. is 37
+
+
+# print "first ", encoded_words[0]
+# print "last ",encoded_words[-1]
+
+# print Tokenizer.word_index["a"]
+# print Tokenizer.word_index["series"]
+# print Tokenizer.word_index["of"]
+# print Tokenizer.word_index["escapades"]
+# print Tokenizer.word_index["demonstrating"]
+# print Tokenizer.word_index["predictable"]
+# print Tokenizer.word_index["gutterball"]
+# for i in Tokenizer.word_index :
+#     if(Tokenizer.word_index[i] == 11172):
+#         print i

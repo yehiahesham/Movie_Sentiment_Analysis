@@ -17,3 +17,6 @@ then apply max on the list, we get max. is 37
 # for i in Tokenizer.word_index :
 #     if(Tokenizer.word_index[i] == 11172):
 #         print i
+
+# text = f.read()
+    # text = re.sub('foobar', 'bar', text)  
